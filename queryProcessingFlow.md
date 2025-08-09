@@ -7,64 +7,64 @@ This document traces the complete flow of how a user's query is processed from f
 ```mermaid
 flowchart TD
     %% Frontend Layer
-    User[👤 User Input] --> FE[Frontend - script.js]
-    FE --> Validate{Validate Query}
+    User["👤 User Input"] --> FE["Frontend - script.js"]
+    FE --> Validate{"Validate Query"}
     Validate -->|Empty| FE
-    Validate -->|Valid| UI[Update UI<br/>- Disable input<br/>- Show loading<br/>- Add user message]
+    Validate -->|Valid| UI["Update UI<br/>- Disable input<br/>- Show loading<br/>- Add user message"]
     
     %% HTTP Layer
-    UI --> HTTP[HTTP POST /api/query<br/>Content-Type: application/json<br/>Body: {query, session_id}]
+    UI --> HTTP["HTTP POST /api/query<br/>Content-Type: application/json<br/>Body: query and session_id"]
     
     %% Backend Entry
-    HTTP --> API[FastAPI Endpoint<br/>app.py:56-74]
-    API --> Parse[Parse QueryRequest Model]
-    Parse --> Session{Session ID<br/>exists?}
-    Session -->|No| CreateSession[Create New Session]
-    Session -->|Yes| UseSession[Use Existing Session]
+    HTTP --> API["FastAPI Endpoint<br/>app.py:56-74"]
+    API --> Parse["Parse QueryRequest Model"]
+    Parse --> Session{"Session ID exists?"}
+    Session -->|No| CreateSession["Create New Session"]
+    Session -->|Yes| UseSession["Use Existing Session"]
     CreateSession --> RAG
-    UseSession --> RAG[RAG System<br/>rag_system.py:102-140]
+    UseSession --> RAG["RAG System<br/>rag_system.py:102-140"]
     
     %% RAG Processing
-    RAG --> Prompt[Wrap Query in<br/>Instructional Prompt]
-    Prompt --> History[Retrieve Conversation<br/>History from SessionManager]
-    History --> AIGen[AI Generator<br/>ai_generator.py:43-87]
+    RAG --> Prompt["Wrap Query in<br/>Instructional Prompt"]
+    Prompt --> History["Retrieve Conversation<br/>History from SessionManager"]
+    History --> AIGen["AI Generator<br/>ai_generator.py:43-87"]
     
     %% AI Processing
-    AIGen --> SystemPrompt[Build System Prompt<br/>with Context]
-    SystemPrompt --> Claude1[Initial Claude API Call<br/>with Tools Enabled]
-    Claude1 --> Decision{Claude Decision}
+    AIGen --> SystemPrompt["Build System Prompt<br/>with Context"]
+    SystemPrompt --> Claude1["Initial Claude API Call<br/>with Tools Enabled"]
+    Claude1 --> Decision{"Claude Decision"}
     
     %% Tool Execution Branch
-    Decision -->|Use Tool| ToolExec[Tool Execution Flow<br/>ai_generator.py:83-135]
-    ToolExec --> ToolMgr[ToolManager Execute<br/>search_tools.py]
-    ToolMgr --> CourseSearch[CourseSearchTool<br/>Execute Method]
-    CourseSearch --> VectorStore[Vector Store Search<br/>ChromaDB + Embeddings]
-    VectorStore --> FormatResults[Format Results with<br/>Course/Lesson Context]
-    FormatResults --> TrackSources[Track Sources for UI]
-    TrackSources --> Claude2[Second Claude API Call<br/>with Search Results]
-    Claude2 --> FinalResponse[Final Response Generation]
+    Decision -->|Use Tool| ToolExec["Tool Execution Flow<br/>ai_generator.py:83-135"]
+    ToolExec --> ToolMgr["ToolManager Execute<br/>search_tools.py"]
+    ToolMgr --> CourseSearch["CourseSearchTool<br/>Execute Method"]
+    CourseSearch --> VectorStore["Vector Store Search<br/>ChromaDB + Embeddings"]
+    VectorStore --> FormatResults["Format Results with<br/>Course/Lesson Context"]
+    FormatResults --> TrackSources["Track Sources for UI"]
+    TrackSources --> Claude2["Second Claude API Call<br/>with Search Results"]
+    Claude2 --> FinalResponse["Final Response Generation"]
     
     %% Direct Response Branch
     Decision -->|Direct Answer| FinalResponse
     
     %% Response Assembly
-    FinalResponse --> UpdateSession[Update Session History<br/>SessionManager]
-    UpdateSession --> GetSources[Retrieve Sources<br/>from ToolManager]
-    GetSources --> ResetSources[Reset Sources for<br/>Next Query]
-    ResetSources --> ResponseTuple[Return (response, sources)]
+    FinalResponse --> UpdateSession["Update Session History<br/>SessionManager"]
+    UpdateSession --> GetSources["Retrieve Sources<br/>from ToolManager"]
+    GetSources --> ResetSources["Reset Sources for<br/>Next Query"]
+    ResetSources --> ResponseTuple["Return response and sources"]
     
     %% Backend Response
-    ResponseTuple --> APIResponse[Construct QueryResponse<br/>- answer<br/>- sources<br/>- session_id]
-    APIResponse --> JSON[JSON Response]
+    ResponseTuple --> APIResponse["Construct QueryResponse<br/>- answer<br/>- sources<br/>- session_id"]
+    APIResponse --> JSON["JSON Response"]
     
     %% Frontend Response Handling
-    JSON --> FEResponse[Frontend Response Handler<br/>script.js:76-95]
-    FEResponse --> UpdateSessionID{New Session ID?}
-    UpdateSessionID -->|Yes| StoreSession[Store Session ID]
+    JSON --> FEResponse["Frontend Response Handler<br/>script.js:76-95"]
+    FEResponse --> UpdateSessionID{"New Session ID?"}
+    UpdateSessionID -->|Yes| StoreSession["Store Session ID"]
     UpdateSessionID -->|No| DisplayResponse
-    StoreSession --> DisplayResponse[Display AI Response<br/>with Sources]
-    DisplayResponse --> RemoveLoading[Remove Loading Indicator]
-    RemoveLoading --> EnableInput[Re-enable Input for<br/>Next Query]
+    StoreSession --> DisplayResponse["Display AI Response<br/>with Sources"]
+    DisplayResponse --> RemoveLoading["Remove Loading Indicator"]
+    RemoveLoading --> EnableInput["Re-enable Input for<br/>Next Query"]
     EnableInput --> User
     
     %% Styling
