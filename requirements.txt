@@ -1,0 +1,8 @@
+anthropic==0.58.2
+fastapi==0.116.1
+uvicorn==0.35.0
+python-multipart==0.0.20
+python-dotenv==1.1.1
+torch --index-url https://download.pytorch.org/whl/cpu
+sentence-transformers
+chromadb
